@@ -3,27 +3,28 @@ from tkinter import *
 from tkinter import ttk
 import tkinter as tk
 from tkinter import filedialog
+import sys
 import socket
 import tkinter.messagebox as mbox 
-import time
 from myFunction import*
 
 PORT = 5050
 # SERVER = socket.gethostbyname(socket.gethostname())
 # SERVER = '127.0.0.1'
 # ADDR = (SERVER, PORT)
-DISCONNECT_MESSAGE = "!DISCONNECT"
+DISCONNECT = "!DISCONNECT"
 SIGN_IN = "SIGN IN"
 SIGN_UP = "SIGN UP"
 DOWNLOAD ="DOWNLOAD"
 SEARCH = "SEARCH"
 READ = "READ"
-
+LIMIT_USER_AMOUNT ="LIMITED USER AMOUNT"
+ACK_USER ="ACK USER"
 
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    
+index = None   
 username = ''
 
 TITLE = "LOGIN"
@@ -64,6 +65,7 @@ def Function():
                     tree.insert('', 'end', iid= i, text="" , values=(str(i+1),info[1],info[0],info[2],info[4],info[3]))
         except Exception:
             mbox.showinfo(None,'Server mất kết nối!')
+            
 
 
                         
@@ -276,7 +278,7 @@ def Function():
     
     
 def __init__window(Client_windows):
-    
+    global index
     def Login():
         def LoginCheck():
             global username
@@ -326,7 +328,7 @@ def __init__window(Client_windows):
         
         LoginCheck()
 
-    def Register(event):
+    def Register():
         
         def checkRegistry():
             global username
@@ -362,10 +364,11 @@ def __init__window(Client_windows):
             RootRF.title(10*' '+"Thông báo")
             PlaceWindow(RootRF, 300, 150)
 
-            SuccessfulLabel = Label(RootRF, text = "Tài khoản của bạn đã tồn tại!\n Vui lòng đăng ký lại")
+            SuccessfulLabel = Label(RootRF, text = "Username của bạn đã tồn tại!\n Vui lòng đăng ký lại")
             SuccessfulLabel.place(x=80, y = 30)
             OkButton = Button(RootRF, text = "OK",command = lambda: CloseWindow(RootRF))
             OkButton.place(x = 85, y = 80, width = 130)
+        
 
         
         RootRegister = Toplevel(Client_windows)
@@ -388,8 +391,16 @@ def __init__window(Client_windows):
         OkButton = Button(RootRegister, text = "OK",command = checkRegistry)
         OkButton.place(x = 140, y = 95, width = 130)
 
-    def End(event):
-        CloseWindow(Client_windows)
+    def End():
+        global index
+        try:
+            send(client,DISCONNECT)
+            send(client,str(index))
+            sys.exit(1)
+        except Exception:
+            sys.exit(1)
+
+        
 
     #init window
     Client_windows.title(80*" "+TITLE)
@@ -420,12 +431,10 @@ def __init__window(Client_windows):
     # LoginButton.bind("<Button-1>",Login)
     LoginButton.place(x = 320, y = 250, width = 80)
 
-    RegisterButton = Button(Client_windows, text = "Đăng ký")
-    RegisterButton.bind("<Button-1>",Register)
+    RegisterButton = Button(Client_windows, text = "Đăng ký", command= Register)
     RegisterButton.place(x = 200, y = 250, width = 80)
 
-    EndButton = Button(Client_windows, text = "Kết thúc")
-    EndButton.bind("<Button-1>", End)
+    EndButton = Button(Client_windows, text = "Kết thúc", command= End)
     EndButton.place(x = 200, y = 300, width = 200)    
 
 def main():     
@@ -434,28 +443,27 @@ def main():
     Client_windows.mainloop()
 
 def IPConnect():
-    def ConnectFail():
-        RootCF = Toplevel(ConnectIP)
-        RootCF.grab_set()
-        RootCF.title(10*' '+"Thông báo")
-        PlaceWindow(RootCF, 300, 150)
-
-        SuccessfulLabel = Label(RootCF, text = "IP không tồn tại!")
-        SuccessfulLabel.place(x=100, y = 30)
-        OkButton = Button(RootCF, text = "OK",command = lambda: CloseWindow(RootCF))
-        OkButton.place(x = 85, y = 80, width = 130)
-
+    global index
     def ConnectSuccessful():
         CloseWindow(ConnectIP)
         main()
     def Connect():
+        global index
         IP_addr = IPInput.get('1.0','end-1c')
         ADDR = (IP_addr,PORT)
         try:
             client.connect(ADDR)
-            ConnectSuccessful()
-        except Exception:
-            ConnectFail()
+            msg = recv(client)
+            if msg == ACK_USER:
+                index = recv(client)
+                index = int(index)
+                ConnectSuccessful()
+            else:
+                mbox.showinfo(None,"Quá giới hạn số lượng người dùng!")
+                sys.exit(1)
+        except Exception as e:
+            mbox.showinfo(None,"Không thể kết nối đến server!")
+            print(e)
 
 
         

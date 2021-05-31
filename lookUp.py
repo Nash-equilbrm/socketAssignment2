@@ -43,11 +43,12 @@ def search_results(cmd,arg):
         data = json.load(file)
         if cmd == 1:
             for book in data:
-                if str(type(data[book].get("id"))) == '<class \'int\'>':
-                    arg = int(arg)
-                else:
-                    arg = str(arg)
-                if data[book].get("id") == arg:
+                # if str(type(data[book].get("id"))) == '<class \'int\'>':
+                #     arg = int(arg)
+                # else:
+                #     arg = str(arg)
+                
+                if str(data[book].get("id")) == str(arg):
                     info.append([data[book].get("id"), data[book].get("name"),data[book].get("author"),data[book].get("year"),data[book].get("type")])
 
         elif cmd == 2:
